@@ -27,6 +27,28 @@ class Snake:
         for i in coordinates:
             pygame.draw.rect(screen, white, [int(i[0]), int(i[1]), block_size, block_size])
 
+    def bites_itself(self):
+        if self.len_tot != self.len_start:
+            for player_body in self.body[:-1]: 
+                if player_body[0] == self.x and player_body[1] == self.y:
+                    return True
+        else:
+            return False
+
+    def update_head(self, x_change, y_change):
+        self.x += x_change
+        self.y += y_change
+
+    def update_body(self):
+        self.head_pos = []
+        self.head_pos.append(self.x)
+        self.head_pos.append(self.y)
+        self.body.append(self.head_pos)
+
+    def update_movement(self):
+        if len(self.body) > self.len_tot:
+            del self.body[0]
+
 
 class Apple:
     def __init__(self, x_min, x_max, y_min, y_max):
@@ -52,12 +74,12 @@ class App:
         self.player = Snake(3*block_size, self._screen_width - 3*block_size, 3*block_size, self._screen_height - 3*block_size)
         self.apple = Apple(3*block_size, self._screen_width - 3*block_size, 3*block_size, self._screen_height - 3*block_size)
         self.score = 0
-        self.player_x_change = 0
-        self.player_y_change = 0
 
         self.execute_game()
 
     def execute_game(self):
+        player_x_change = player_y_change = 0
+
         while self._running:
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
@@ -65,30 +87,30 @@ class App:
                         self._running = False
                         self._game_over = True
                     elif event.key == pygame.K_LEFT:
-                        self.player_x_change = -block_size
-                        self.player_y_change = 0
+                        player_x_change = -block_size
+                        player_y_change = 0
                     elif event.key == pygame.K_RIGHT:
-                        self.player_x_change = block_size
-                        self.player_y_change = 0
+                        player_x_change = block_size
+                        player_y_change = 0
                     elif event.key == pygame.K_UP:
-                        self.player_y_change = -block_size
-                        self.player_x_change = 0
+                        player_y_change = -block_size
+                        player_x_change = 0
                     elif event.key == pygame.K_DOWN:
-                        self.player_y_change = block_size
-                        self.player_x_change = 0
+                        player_y_change = block_size
+                        player_x_change = 0
 
-            self.update_player_head(self.player_x_change, self.player_y_change)
+            self.player.update_head(player_x_change, player_y_change)
 
             self.player_teleport_if_wall_hit()
 
-            self.update_player_body()
+            self.player.update_body()
 
-            if self.player_bites_itself():
+            if self.player.bites_itself():
                 self._game_over = True
                 self.game_over_and_quit()
                 break
 
-            self.update_player_movement()
+            self.player.update_movement()
             
             if self.player_eats_apple():
                 self.player.len_tot += 1
@@ -122,34 +144,12 @@ class App:
         elif self.player.y < 0:
             self.player.y = self._screen_height - block_size
 
-    def player_bites_itself(self):
-        if self.player.len_tot != self.player.len_start:
-            for player_body in self.player.body[:-1]: 
-                if player_body[0] == self.player.x and player_body[1] == self.player.y:
-                    return True
-        else:
-            return False
-
     def player_eats_apple(self):
         if abs(self.player.x - self.apple.x + block_size/2) <= block_size/2 and \
             abs(self.player.y - self.apple.y + block_size/2) <= block_size/2:
             return True
         else:
             return False
-
-    def update_player_head(self, x_change, y_change):
-        self.player.x += x_change
-        self.player.y += y_change
-
-    def update_player_body(self):
-        self.player.head_pos = []
-        self.player.head_pos.append(self.player.x)
-        self.player.head_pos.append(self.player.y)
-        self.player.body.append(self.player.head_pos)
-
-    def update_player_movement(self):
-        if len(self.player.body) > self.player.len_tot:
-            del self.player.body[0]
 
     def update_score(self):
         self.score = self.player.len_tot - 1
